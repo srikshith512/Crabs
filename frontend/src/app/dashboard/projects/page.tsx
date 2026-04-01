@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, Plus, X, Loader2 } from "lucide-react";
 
@@ -196,24 +197,26 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {projects.map((project) => (
-            <div key={project.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-md transition-all group flex flex-col cursor-pointer">
-              <div className="flex justify-between items-start mb-6">
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <Building2 className="w-6 h-6" />
+            <Link key={project.id} href={`/dashboard/projects/${project.id}/orders`} className="block">
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-md transition-all group flex flex-col cursor-pointer">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700">
+                    {new Date(project.created_at).toLocaleDateString()}
+                  </span>
                 </div>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700">
-                  {new Date(project.created_at).toLocaleDateString()}
-                </span>
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-xl mb-1.5 line-clamp-1">{project.name}</h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 line-clamp-1 mb-6">{project.client_name}</p>
+                </div>
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-sm">
+                  <span className="text-slate-500 dark:text-slate-400">0 orders</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:underline">Open Orders &rarr;</span>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-slate-900 dark:text-white text-xl mb-1.5 line-clamp-1">{project.name}</h3>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 line-clamp-1 mb-6">{project.client_name}</p>
-              </div>
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-sm">
-                <span className="text-slate-500 dark:text-slate-400">0 orders</span>
-                <span className="text-blue-600 dark:text-blue-400 font-medium group-hover:underline">Open Project &rarr;</span>
-              </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

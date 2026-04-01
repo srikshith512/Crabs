@@ -5,6 +5,7 @@ import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
+import orderRoutes from './routes/orders';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -17,6 +18,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });

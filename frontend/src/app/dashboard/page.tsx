@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
   Building2, 
@@ -241,7 +242,7 @@ export default function DashboardPage() {
           </div>
           <div className="relative z-10">
             <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Work Done Value</p>
-            <h3 className="text-3xl font-bold text-slate-900 dark:text-white">₹0</h3>
+            <h3 className="text-3xl font-bold text-slate-900 dark:text-white">?0</h3>
           </div>
         </div>
 
@@ -288,18 +289,20 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {projects.slice(0, 4).map((project) => (
-                <div key={project.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-md transition-all group flex flex-col cursor-pointer">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                      <Building2 className="w-5 h-5" />
+                <Link key={project.id} href={`/dashboard/projects/${project.id}/orders`} className="block">
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:shadow-md transition-all group flex flex-col cursor-pointer">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="p-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                        {new Date(project.created_at).toLocaleDateString()}
+                      </span>
                     </div>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {new Date(project.created_at).toLocaleDateString()}
-                    </span>
+                    <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-1 line-clamp-1">{project.name}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{project.client_name}</p>
                   </div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-lg mb-1 line-clamp-1">{project.name}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{project.client_name}</p>
-                </div>
+                </Link>
               ))}
             </div>
           )}

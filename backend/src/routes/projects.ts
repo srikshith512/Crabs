@@ -34,6 +34,35 @@ router.get('/', authenticateUser, async (req: AuthenticatedRequest, res: Respons
   }
 });
 
+// GET a single project by id
+router.get('/:projectId', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { projectId } = req.params;
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project id is required.' });
+    }
+
+    const scopedClient = getSupabaseScopedClient(req.token!);
+    const { data, error } = await scopedClient
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .maybeSingle();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    if (!data) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    return res.json({ project: data });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
 // POST new project
 router.post('/', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
   try {
@@ -52,7 +81,7 @@ router.post('/', authenticateUser, async (req: AuthenticatedRequest, res: Respon
         { 
           name, 
           client_name,
-          user_id: userId
+          owner_id: userId
         }
       ])
       .select();
