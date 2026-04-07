@@ -6,12 +6,13 @@ import cors from 'cors';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import orderRoutes from './routes/orders';
+import itemRoutes from './routes/items';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:8080'],
   credentials: true
 }));
 app.use(express.json());
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/items', itemRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });

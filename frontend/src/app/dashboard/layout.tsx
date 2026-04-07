@@ -55,10 +55,10 @@ export default function DashboardLayout({
       )}
 
       {/* Sidebar - Slider */}
-      <aside className={`fixed inset-y-0 left-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col z-50 transition-all duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} ${isCollapsed ? "w-64 md:w-20" : "w-64"}`}>
+      <aside className={`fixed inset-y-0 left-0 bg-gradient-to-b from-indigo-700 to-violet-900 flex flex-col z-50 transition-all duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} ${isCollapsed ? "w-64 md:w-20" : "w-64"}`}>
         
         {/* Sidebar Header */}
-        <div className={`h-16 flex items-center bg-indigo-500 bg-gradient-to-r from-blue-600 to-indigo-600 flex-shrink-0 transition-all duration-300 ${isCollapsed ? "px-6 md:justify-center md:px-0 justify-between" : "px-6 justify-between"}`}>
+        <div className={`h-16 flex items-center bg-gradient-to-r from-blue-700 to-indigo-700 flex-shrink-0 transition-all duration-300 ${isCollapsed ? "px-6 md:justify-center md:px-0 justify-between" : "px-6 justify-between"}`}>
           <Link href="/dashboard" className="flex items-center gap-2 text-white overflow-hidden">
             <Building2 className="w-6 h-6 shrink-0" />
             <span className={`text-xl font-bold tracking-tight whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? "md:hidden" : "block"}`}>CRABS</span>
@@ -72,7 +72,7 @@ export default function DashboardLayout({
         </div>
 
         {/* Sidebar Nav */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-4 space-y-1">
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-4 space-y-2">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -87,11 +87,11 @@ export default function DashboardLayout({
                   isCollapsed ? "justify-start md:justify-center px-4 md:px-0 gap-3 md:gap-0" : "justify-start px-4 gap-3"
                 } ${
                   isActive 
-                    ? "bg-blue-600 text-white shadow-sm" 
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-700/20" 
+                    : "text-white/70 hover:bg-white/10 hover:text-white"
                 }`}
               >
-                <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors"}`} />
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "text-white/60 group-hover:text-white transition-colors"}`} />
                 <span className={`whitespace-nowrap transition-opacity duration-300 ${isCollapsed ? "md:hidden" : "block"}`}>{item.name}</span>
               </Link>
             )
@@ -99,10 +99,10 @@ export default function DashboardLayout({
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex justify-center items-center">
+        <div className="p-4 border-t border-white/10 flex justify-center items-center">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden md:flex p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+            className="hidden md:flex p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
             {isCollapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
@@ -116,7 +116,7 @@ export default function DashboardLayout({
         {/* Top Header */}
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-10 w-full">
           
-          <div className="flex items-center flex-1 max-w-xl">
+          <div className="flex items-center flex-1">
             {/* Mobile Menu Slider Button */}
             <button 
               className="md:hidden p-2 mr-3 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
@@ -125,20 +125,20 @@ export default function DashboardLayout({
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Search Bar */}
-            <div className="relative w-full hidden sm:block">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            {/* Centered Search Bar */}
+            <div className="relative w-full max-w-xl mx-auto hidden sm:block">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-slate-400" />
               </div>
               <input 
                 type="text" 
                 placeholder="Search projects, orders, or clients..." 
-                className="w-full pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-transparent rounded-full focus:bg-white dark:focus:bg-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 text-sm transition-all text-slate-900 dark:text-white outline-none placeholder-slate-500 tracking-wide"
+                className="w-full pl-11 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full focus:bg-white dark:focus:bg-slate-900 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm transition-all text-slate-900 dark:text-white outline-none placeholder-slate-400"
               />
             </div>
             
             {/* Mobile Search Icon only */}
-            <button className="sm:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+            <button className="sm:hidden p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg ml-auto">
               <Search className="w-5 h-5" />
             </button>
           </div>
@@ -146,16 +146,20 @@ export default function DashboardLayout({
           {/* Right Actions */}
           <div className="flex items-center gap-2 md:gap-4 ml-4">
             
-            {/* Theme / Dark Mode Converter */}
-            <div className="mr-1 md:mr-2">
-               <ThemeToggle />
-            </div>
+            {/* Theme Toggle */}
+            <ThemeToggle />
             
-            {/* Profile Dropdown */}
+            {/* Notification Icon */}
+            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full relative transition-colors">
+              <div className="w-2 h-2 bg-red-500 rounded-full absolute top-2 right-2 border-2 border-white dark:border-slate-900 shadow-sm"></div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-bell"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </button>
+            
+            {/* Profile */}
             <div className="relative">
               <button 
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 shadow-sm"
+                className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 p-[2px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900 shadow-sm transition-transform active:scale-95"
               >
                 <img 
                   src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=f0f0f0" 
@@ -163,6 +167,7 @@ export default function DashboardLayout({
                   className="w-full h-full rounded-full bg-white object-cover"
                 />
               </button>
+
 
               {/* Enhanced Dropdown Menu */}
               {isProfileOpen && (

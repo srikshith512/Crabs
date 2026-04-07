@@ -61,9 +61,9 @@ CREATE TABLE public.projects (
 CREATE TABLE public.orders (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES public.projects(id) ON DELETE CASCADE NOT NULL,
-  order_number TEXT NOT NULL,
-  date DATE NOT NULL,
-  status TEXT DEFAULT 'draft',
+  order_code TEXT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
