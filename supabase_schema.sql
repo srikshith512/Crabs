@@ -71,8 +71,12 @@ CREATE TABLE public.orders (
 CREATE TABLE public.items (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE NOT NULL,
+  item_code TEXT,
   description TEXT NOT NULL,
+  short_description TEXT,
+  department TEXT,
   unit TEXT NOT NULL,
+  quantity DECIMAL(12,3),
   rate DECIMAL(12,2) NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -87,6 +91,7 @@ CREATE TABLE public.measurements (
   breadth DECIMAL(10,3),
   depth DECIMAL(10,3),
   quantity DECIMAL(12,3) NOT NULL, -- Calculated value
+  custom_fields JSONB DEFAULT '{}'::jsonb, -- Department-specific fields 
   recorded_by UUID REFERENCES public.profiles(id),
   recorded_date DATE DEFAULT CURRENT_DATE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
