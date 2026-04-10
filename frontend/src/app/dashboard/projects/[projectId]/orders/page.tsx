@@ -85,12 +85,12 @@ export default function OrdersPage() {
 
   const getSessionToken = () => {
     const sessionString = localStorage.getItem("session");
-    if (!sessionString) {
+    if (!sessionString || sessionString === "null") {
       router.push("/login");
       return null;
     }
     const session = JSON.parse(sessionString);
-    return session.access_token as string;
+    return session?.access_token as string | null;
   };
 
   const loadData = async () => {

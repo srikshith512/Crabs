@@ -50,7 +50,7 @@ router.get('/order/:orderId', authenticateUser, async (req: AuthenticatedRequest
 
     const { data: items, error } = await access.scopedClient
       .from('items')
-      .select('*, milestones:item_milestones(*)')
+      .select('*, milestones:item_milestones(*), measurements(*)')
       .eq('order_id', orderId)
       .order('created_at', { ascending: true });
 
@@ -122,6 +122,86 @@ router.post('/:orderId', authenticateUser, async (req: AuthenticatedRequest, res
     }
 
     return res.status(201).json({ item: newItem });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// PUT update an item
+router.put('/:itemId', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { itemId } = req.params;
+    const { 
+      item_code, 
+      description, 
+      short_description, 
+      unit, 
+      department, 
+      quantity, 
+      rate,
+      milestones 
+    } = req.body;
+
+    if (!description || !unit || !rate) {
+      return res.status(400).json({ error: 'Description, unit, and rate are required.' });
+    }
+
+    const scopedClient = getSupabaseScopedClient(req.token!);
+
+    // Verify access to item
+    const { data: itemData, error: lookupErr } = await scopedClient
+      .from('items')
+      .select('order_id')
+      .eq('id', itemId)
+      .maybeSingle();
+
+    if (lookupErr || !itemData) return res.status(404).json({ error: 'Item not found' });
+    
+    const access = await ensureOrderAccess(req.token!, itemData.order_id);
+    if (!access.ok) return res.status(403).json({ error: access.error });
+
+    // Update item
+    const { data: updatedItem, error: updateErr } = await scopedClient
+      .from('items')
+      .update({
+        item_code,
+        description,
+        short_description,
+        unit,
+        department,
+        quantity,
+        rate
+      })
+      .eq('id', itemId)
+      .select()
+      .single();
+
+    if (updateErr) return res.status(400).json({ error: updateErr.message });
+
+    // Replace Milestones
+    if (milestones && Array.isArray(milestones)) {
+      // Delete old milestones
+      await scopedClient.from('item_milestones').delete().eq('item_id', itemId);
+      
+      // Insert new ones
+      if (milestones.length > 0) {
+        const milestonesToInsert = milestones.map(m => ({
+          item_id: itemId,
+          name: m.name,
+          percentage: m.percentage
+        }));
+
+        const { error: msErr } = await scopedClient
+          .from('item_milestones')
+          .insert(milestonesToInsert);
+
+        if (msErr) {
+          return res.status(400).json({ error: 'Item updated but milestones failed: ' + msErr.message });
+        }
+      }
+    }
+
+    return res.status(200).json({ item: updatedItem });
   } catch (err: any) {
     return res.status(500).json({ error: 'Internal server error', details: err.message });
   }
