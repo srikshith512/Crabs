@@ -32,11 +32,12 @@ export default function DashboardPage() {
   const fetchProjects = async () => {
     try {
       const sessionString = localStorage.getItem("session");
-      if (!sessionString) {
+      if (!sessionString || sessionString === "null") {
         setIsLoading(false);
         return router.push("/login");
       }
       const session = JSON.parse(sessionString);
+      if (!session || !session.access_token) return router.push("/login");
 
       const res = await fetch("http://localhost:5000/api/projects", {
         headers: {
@@ -60,8 +61,9 @@ export default function DashboardPage() {
     
     try {
       const sessionString = localStorage.getItem("session");
-      if (!sessionString) return router.push("/login");
+      if (!sessionString || sessionString === "null") return router.push("/login");
       const session = JSON.parse(sessionString);
+      if (!session || !session.access_token) return router.push("/login");
 
       const res = await fetch("http://localhost:5000/api/projects", {
         method: "POST",

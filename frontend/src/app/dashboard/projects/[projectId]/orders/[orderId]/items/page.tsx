@@ -83,6 +83,7 @@ export default function ItemsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
 
   // Filter & Sort State
@@ -150,12 +151,12 @@ export default function ItemsPage() {
 
   const getSessionToken = () => {
     const sessionString = localStorage.getItem("session");
-    if (!sessionString) {
+    if (!sessionString || sessionString === "null") {
       router.push("/login");
       return null;
     }
     const session = JSON.parse(sessionString);
-    return session.access_token as string;
+    return session?.access_token as string | null;
   };
 
   const loadData = async (silent = false) => {
@@ -257,8 +258,14 @@ export default function ItemsPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${API_BASE}/items/${orderId}`, {
-        method: "POST",
+      const endpoint = editingItemId 
+        ? `${API_BASE}/items/${editingItemId}`
+        : `${API_BASE}/items/${orderId}`;
+      
+      const method = editingItemId ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -277,17 +284,7 @@ export default function ItemsPage() {
       }
 
       // Reset form and reload
-      setFormData({
-        item_code: "",
-        description: "",
-        short_description: "",
-        unit: "MT",
-        department: "",
-        quantity: "",
-        rate: ""
-      });
-      setMilestones([{ name: "Advance Payment", percentage: 100 }]);
-      setIsModalOpen(false);
+      handleCloseModal();
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
       void loadData(true);
@@ -296,6 +293,40 @@ export default function ItemsPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleEditItem = (item: Item) => {
+    setFormData({
+      item_code: item.item_code || "",
+      description: item.description || "",
+      short_description: item.short_description || "",
+      unit: item.unit || "MT",
+      department: item.department || "",
+      quantity: String(item.quantity) || "",
+      rate: String(item.rate) || ""
+    });
+    if (item.milestones && item.milestones.length > 0) {
+      setMilestones(item.milestones.map(m => ({ name: m.name, percentage: m.percentage })));
+    } else {
+      setMilestones([{ name: "Advance Payment", percentage: 100 }]);
+    }
+    setEditingItemId(item.id);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setFormData({
+      item_code: "",
+      description: "",
+      short_description: "",
+      unit: "MT",
+      department: "",
+      quantity: "",
+      rate: ""
+    });
+    setMilestones([{ name: "Advance Payment", percentage: 100 }]);
+    setEditingItemId(null);
+    setIsModalOpen(false);
   };
 
   return (
@@ -331,7 +362,10 @@ export default function ItemsPage() {
             Generate RA Bill
           </button>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingItemId(null);
+              setIsModalOpen(true);
+            }}
             className="flex items-center gap-2 px-7 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-2xl transition-all shadow-xl shadow-blue-600/20 active:scale-95"
           >
             <Plus className="w-5 h-5" />
@@ -460,11 +494,17 @@ export default function ItemsPage() {
                     <td className="px-8 py-6 text-base font-black text-blue-600 dark:text-blue-400 text-right font-mono tracking-tight">₹{(item.quantity * item.rate).toLocaleString("en-IN")}</td>
                     <td className="px-8 py-6">
                       <div className="flex items-center justify-end gap-2">
-                        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-[10px] font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95">
+                        <Link 
+                          href={`/dashboard/projects/${projectId}/orders/${orderId}/items/${item.id}/measurements`}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-xl text-[10px] font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                        >
                           <Settings className="w-3.5 h-3.5" />
                           Measure
-                        </button>
-                        <button className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm">
+                        </Link>
+                        <button 
+                          onClick={() => handleEditItem(item)}
+                          className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-white dark:hover:bg-slate-800 rounded-xl transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 shadow-sm"
+                        >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all border border-transparent hover:border-red-100 dark:hover:border-red-900/40">
@@ -581,24 +621,26 @@ export default function ItemsPage() {
             />
             
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 40 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.4)] border border-slate-200 dark:border-slate-800 flex flex-col"
+               initial={{ opacity: 0, scale: 0.9, y: 40 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.9, y: 40 }}
+               className="relative bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.4)] border border-slate-200 dark:border-slate-800 flex flex-col"
             >
-              {/* Modal Header */}
-              <div className="px-10 py-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 relative z-10">
-                <div>
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Add New Item</h2>
-                  <p className="text-sm font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">Workspace: {project?.name}</p>
-                </div>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="w-12 h-12 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+               {/* Modal Header */}
+               <div className="px-10 py-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 relative z-10">
+                  <div>
+                     <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {editingItemId ? "Edit Item" : "Add New Item"}
+                     </h2>
+                     <p className="text-sm font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">Workspace: {project?.name}</p>
+                  </div>
+                  <button 
+                     onClick={handleCloseModal}
+                     className="w-12 h-12 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  >
+                     <X className="w-6 h-6" />
+                  </button>
+               </div>
 
               {/* Modal Body (Scrollable) */}
               <div className="flex-1 overflow-y-auto px-10 py-10 space-y-10 custom-scrollbar relative z-10">
@@ -764,7 +806,7 @@ export default function ItemsPage() {
               {/* Modal Footer */}
               <div className="px-10 py-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-end gap-5 relative z-10">
                 <button 
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={handleCloseModal}
                   disabled={isSubmitting}
                   className="px-6 py-3 text-sm font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
@@ -781,7 +823,7 @@ export default function ItemsPage() {
                   ) : (
                     <CheckCircle2 className="w-5 h-5" />
                   )}
-                  {isSubmitting ? "Generating Item..." : "Create New Item"}
+                  {isSubmitting ? "Saving..." : (editingItemId ? "Save Changes" : "Create New Item")}
                 </button>
               </div>
             </motion.div>

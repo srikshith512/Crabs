@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import orderRoutes from './routes/orders';
 import itemRoutes from './routes/items';
+import measurementRoutes from './routes/measurements';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,6 +22,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/items', itemRoutes);
+app.use('/api/measurements', measurementRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });

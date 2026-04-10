@@ -36,7 +36,7 @@ type Item = {
   item_code: string;
   description: string;
   department: string;
-  measurements_count?: number; // Mock data
+  measurements?: any[];
 };
 
 const API_BASE = "http://localhost:5000/api";
@@ -55,12 +55,12 @@ export default function MeasurementsPage() {
 
   const getSessionToken = () => {
     const sessionString = localStorage.getItem("session");
-    if (!sessionString) {
+    if (!sessionString || sessionString === "null") {
       router.push("/login");
       return null;
     }
     const session = JSON.parse(sessionString);
-    return session.access_token as string;
+    return session?.access_token as string | null;
   };
 
   useEffect(() => {
@@ -284,7 +284,9 @@ export default function MeasurementsPage() {
 
                        <div className="mt-6 pt-6 border-t border-slate-50 dark:border-slate-800/50 flex flex-col gap-1">
                          <p className="text-xs font-bold text-slate-400 tracking-wide">Measurements</p>
-                         <p className="text-sm font-black text-slate-900 dark:text-white tabular-nums">0 entries</p>
+                         <p className="text-sm font-black text-slate-900 dark:text-white tabular-nums">
+                            {item.measurements?.length || 0} entries
+                         </p>
                        </div>
                     </div>
 
