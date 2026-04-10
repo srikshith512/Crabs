@@ -207,4 +207,35 @@ router.put('/:itemId', authenticateUser, async (req: AuthenticatedRequest, res: 
   }
 });
 
+// DELETE an item
+router.delete('/:itemId', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { itemId } = req.params;
+    const scopedClient = getSupabaseScopedClient(req.token!);
+
+    // Verify access to item
+    const { data: itemData, error: lookupErr } = await scopedClient
+      .from('items')
+      .select('order_id')
+      .eq('id', itemId)
+      .maybeSingle();
+
+    if (lookupErr || !itemData) return res.status(404).json({ error: 'Item not found' });
+    
+    const access = await ensureOrderAccess(req.token!, itemData.order_id);
+    if (!access.ok) return res.status(403).json({ error: access.error });
+
+    const { error: deleteErr } = await scopedClient
+      .from('items')
+      .delete()
+      .eq('id', itemId);
+
+    if (deleteErr) return res.status(400).json({ error: deleteErr.message });
+
+    return res.status(200).json({ success: true, message: 'Item deleted successfully' });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
 export default router;

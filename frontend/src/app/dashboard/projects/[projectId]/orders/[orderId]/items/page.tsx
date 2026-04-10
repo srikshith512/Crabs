@@ -329,6 +329,35 @@ export default function ItemsPage() {
     setIsModalOpen(false);
   };
 
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm("Are you sure you want to delete this item? All associated measurements and milestones will also be deleted.")) {
+      return;
+    }
+    
+    const token = getSessionToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Failed to delete item");
+      }
+      
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      
+      void loadData(true);
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       {/* ─── Breadcrumb ─── */}
@@ -507,7 +536,9 @@ export default function ItemsPage() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all border border-transparent hover:border-red-100 dark:hover:border-red-900/40">
+                        <button 
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all border border-transparent hover:border-red-100 dark:hover:border-red-900/40">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
