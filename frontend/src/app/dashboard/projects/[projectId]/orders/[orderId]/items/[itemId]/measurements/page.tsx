@@ -27,6 +27,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { calculateStructureWeight } from "@/lib/calculations/structure";
+import { calculateOthersQuantity } from "@/lib/calculations/others";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Item = {
@@ -48,9 +49,9 @@ type MeasurementRow = {
   structure_type?: string;
   mark?: string;
   length?: number;
-  width?: number;
-  thickness?: number;
-  qty?: number;
+  width?: number; // width = breadth for others
+  thickness?: number; // thickness = height for others
+  qty?: number; // qty = nos for others
   unit_weight?: number;
   total_weight?: number;
   milestone_values?: Record<string, number>;
@@ -200,18 +201,32 @@ export default function MeasurementSheetPage() {
         Number(newRow.unit_weight || 0)
       );
       setNewRow(prev => ({ ...prev, total_weight: w }));
+    } else if (item?.department === "Others") {
+      const q = calculateOthersQuantity(
+        Number(newRow.length || 0), Number(newRow.width || 0),
+        Number(newRow.thickness || 0), Number(newRow.qty || 1)
+      );
+      setNewRow(prev => ({ ...prev, total_weight: q }));
     }
   }, [newRow.length, newRow.width, newRow.thickness, newRow.qty, newRow.unit_weight, item?.department]);
 
   // Auto-calculate weight for edit row
   useEffect(() => {
-    if (item?.department === "Structure" && editingRowId) {
-      const w = calculateStructureWeight(
-        Number(editRow.length || 0), Number(editRow.width || 1),
-        Number(editRow.thickness || 1), Number(editRow.qty || 0),
-        Number(editRow.unit_weight || 0)
-      );
-      setEditRow(prev => ({ ...prev, total_weight: w }));
+    if (editingRowId) {
+      if (item?.department === "Structure") {
+        const w = calculateStructureWeight(
+          Number(editRow.length || 0), Number(editRow.width || 1),
+          Number(editRow.thickness || 1), Number(editRow.qty || 0),
+          Number(editRow.unit_weight || 0)
+        );
+        setEditRow(prev => ({ ...prev, total_weight: w }));
+      } else if (item?.department === "Others") {
+        const q = calculateOthersQuantity(
+          Number(editRow.length || 0), Number(editRow.width || 0),
+          Number(editRow.thickness || 0), Number(editRow.qty || 1)
+        );
+        setEditRow(prev => ({ ...prev, total_weight: q }));
+      }
     }
   }, [editRow.length, editRow.width, editRow.thickness, editRow.qty, editRow.unit_weight, item?.department, editingRowId]);
 
@@ -538,6 +553,7 @@ export default function MeasurementSheetPage() {
   // ═══════════════════════════════════════════
 
   const isStructure = item?.department === "Structure";
+  const isOthers = item?.department === "Others";
   const totalMT = measurements.reduce((sum, m) => sum + Number(m.quantity || 0), 0);
   const scope = item ? item.quantity : 0;
   const progressPercent = scope > 0 ? Math.min((totalMT / scope) * 100, 100) : 0;
@@ -664,6 +680,25 @@ export default function MeasurementSheetPage() {
           </td>
         </>
       )}
+      {isOthers && (
+        <>
+          <td className="px-4 py-2">
+            <input type="number" step="0.001" placeholder="Length" value={row.length ?? ""}
+              onChange={e => updater({ length: e.target.value ? Number(e.target.value) : undefined })}
+              className={inputNumClass} />
+          </td>
+          <td className="px-4 py-2">
+            <input type="number" step="0.001" placeholder="Breadth" value={row.width ?? ""}
+              onChange={e => updater({ width: e.target.value ? Number(e.target.value) : undefined })}
+              className={inputNumClass} />
+          </td>
+          <td className="px-4 py-2">
+            <input type="number" step="0.001" placeholder="Height" value={row.thickness ?? ""}
+              onChange={e => updater({ thickness: e.target.value ? Number(e.target.value) : undefined })}
+              className={inputNumClass} />
+          </td>
+        </>
+      )}
       <td className="px-4 py-2">
         <input type="number" step="1" placeholder="0" value={row.qty ?? ""}
           onChange={e => updater({ qty: e.target.value ? Number(e.target.value) : undefined })}
@@ -755,6 +790,9 @@ export default function MeasurementSheetPage() {
             {isStructure && (
               <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest rounded-md">Structure</span>
             )}
+            {isOthers && (
+              <span className="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-black uppercase tracking-widest rounded-md">General</span>
+            )}
           </div>
           <div className="flex items-center gap-6 mt-3">
             <div className="flex flex-col">
@@ -782,7 +820,7 @@ export default function MeasurementSheetPage() {
           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total Weight</span>
           <div className="flex items-baseline gap-1">
             <span className="text-3xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">{totalMT.toFixed(2)}</span>
-            <span className="text-sm font-bold text-slate-400">{item?.unit || "MT"}</span>
+            <span className="text-sm font-bold text-slate-400">{item?.unit || "Unit"}</span>
           </div>
         </div>
       </div>
@@ -856,8 +894,15 @@ export default function MeasurementSheetPage() {
                     <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Thickness</th>
                   </>
                 )}
-                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Qty</th>
-                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Total ({item?.unit || "MT"})</th>
+                {isOthers && (
+                  <>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Length</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Breadth</th>
+                    <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Height</th>
+                  </>
+                )}
+                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">{isOthers ? "Nos" : "Qty"}</th>
+                <th className="px-4 py-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-right">Total ({item?.unit || "Unit"})</th>
                 {departmentMilestones.map((ms, idx) => (
                   <th key={idx} className="px-4 py-3 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider text-center min-w-[80px]">
                     <div className="flex flex-col items-center">
@@ -890,6 +935,13 @@ export default function MeasurementSheetPage() {
                         className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded text-[11px] font-semibold placeholder:text-slate-400 focus:outline-none focus:border-blue-500" />
                     </td>
                     <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                    <td className="px-4 py-2"></td>
+                  </>
+                )}
+                {isOthers && (
+                  <>
                     <td className="px-4 py-2"></td>
                     <td className="px-4 py-2"></td>
                     <td className="px-4 py-2"></td>
@@ -946,6 +998,13 @@ export default function MeasurementSheetPage() {
                         <td className="px-4 py-3 text-xs font-semibold text-slate-600 dark:text-slate-400">{m.custom_fields?.structure_type || "-"}</td>
                         <td className="px-4 py-3 text-xs font-semibold text-slate-600 dark:text-slate-400">{m.custom_fields?.mark || "-"}</td>
                         <td className="px-4 py-3 text-xs font-mono text-right text-slate-600 dark:text-slate-400">{m.custom_fields?.unit_weight ?? "-"}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-right text-slate-600 dark:text-slate-400">{m.custom_fields?.length ?? "-"}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-right text-slate-600 dark:text-slate-400">{m.custom_fields?.width ?? "-"}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-right text-slate-600 dark:text-slate-400">{m.custom_fields?.thickness ?? "-"}</td>
+                      </>
+                    )}
+                    {isOthers && (
+                      <>
                         <td className="px-4 py-3 text-xs font-mono text-right text-slate-600 dark:text-slate-400">{m.custom_fields?.length ?? "-"}</td>
                         <td className="px-4 py-3 text-xs font-mono text-right text-slate-600 dark:text-slate-400">{m.custom_fields?.width ?? "-"}</td>
                         <td className="px-4 py-3 text-xs font-mono text-right text-slate-600 dark:text-slate-400">{m.custom_fields?.thickness ?? "-"}</td>
@@ -1008,11 +1067,12 @@ export default function MeasurementSheetPage() {
                 <td className="px-4 py-3"></td>
                 <td className="px-4 py-3 text-sm font-extrabold text-slate-900 dark:text-white">Subtotal · All Areas</td>
                 {isStructure && (<><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td></>)}
+                {isOthers && (<><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td></>)}
                 <td className="px-4 py-3 text-sm font-extrabold text-right text-slate-900 dark:text-white font-mono">
-                  Qty: {filteredMeasurements.reduce((s, m) => s + Number(m.custom_fields?.qty || 0), 0).toFixed(2)}
+                  {isOthers ? "Nos" : "Qty"}: {filteredMeasurements.reduce((s, m) => s + Number(m.custom_fields?.qty || 0), 0).toFixed(0)}
                 </td>
                 <td className="px-4 py-3 text-sm font-black text-right text-blue-600 dark:text-blue-400 font-mono">
-                  {totalMT.toFixed(3)} {item?.unit || "MT"}
+                  {totalMT.toFixed(3)} {item?.unit || "Unit"}
                 </td>
                 {departmentMilestones.map((ms, msIdx) => {
                   const msTotal = filteredMeasurements.reduce((sum, m) => {
@@ -1040,7 +1100,7 @@ export default function MeasurementSheetPage() {
           </div>
           <div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{item?.unit || "MT"}</span>
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{item?.unit || "Unit"}</span>
             </div>
             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none mt-1">{totalMT.toFixed(3)}</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Measured Weight</p>
