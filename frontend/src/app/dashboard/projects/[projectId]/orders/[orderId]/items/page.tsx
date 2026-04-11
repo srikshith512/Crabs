@@ -77,8 +77,8 @@ export default function ItemsPage() {
   const orderId = params?.orderId as string;
 
   // Page State
-  const [project, setProject] = useState<Project | null>(memoryCache.projects[projectId] || null);
-  const [order, setOrder] = useState<Order | null>(memoryCache.orders[orderId] || null);
+  const [project, setProject] = useState<Project | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,6 +139,17 @@ export default function ItemsPage() {
     departments: new Set(items.map(item => item.department)).size,
     averageAmount: items.length > 0 ? items.reduce((sum, item) => sum + (item.quantity * item.rate), 0) / items.length : 0
   };
+
+  useEffect(() => {
+    // Hydrate from cache immediately on mount to prevent layout shift
+    // but ensure initial render matches SSR (which starts with null)
+    if (projectId && memoryCache.projects[projectId]) {
+      setProject(memoryCache.projects[projectId]);
+    }
+    if (orderId && memoryCache.orders[orderId]) {
+      setOrder(memoryCache.orders[orderId]);
+    }
+  }, [projectId, orderId]);
 
   useEffect(() => {
     if (!projectId || !orderId) return;
@@ -860,22 +871,6 @@ export default function ItemsPage() {
           </div>
         )}
       </AnimatePresence>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 10px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #334155;
-        }
-      `}</style>
     </div>
   );
 }
