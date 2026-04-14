@@ -77,8 +77,8 @@ export default function ItemsPage() {
   const orderId = params?.orderId as string;
 
   // Page State
-  const [project, setProject] = useState<Project | null>(memoryCache.projects[projectId] || null);
-  const [order, setOrder] = useState<Order | null>(memoryCache.orders[orderId] || null);
+  const [project, setProject] = useState<Project | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -139,6 +139,17 @@ export default function ItemsPage() {
     departments: new Set(items.map(item => item.department)).size,
     averageAmount: items.length > 0 ? items.reduce((sum, item) => sum + (item.quantity * item.rate), 0) / items.length : 0
   };
+
+  useEffect(() => {
+    // Hydrate from cache immediately on mount to prevent layout shift
+    // but ensure initial render matches SSR (which starts with null)
+    if (projectId && memoryCache.projects[projectId]) {
+      setProject(memoryCache.projects[projectId]);
+    }
+    if (orderId && memoryCache.orders[orderId]) {
+      setOrder(memoryCache.orders[orderId]);
+    }
+  }, [projectId, orderId]);
 
   useEffect(() => {
     if (!projectId || !orderId) return;
@@ -329,6 +340,35 @@ export default function ItemsPage() {
     setIsModalOpen(false);
   };
 
+  const handleDeleteItem = async (itemId: string) => {
+    if (!confirm("Are you sure you want to delete this item? All associated measurements and milestones will also be deleted.")) {
+      return;
+    }
+    
+    const token = getSessionToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/items/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || "Failed to delete item");
+      }
+      
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      
+      void loadData(true);
+    } catch (e: any) {
+      alert(e.message);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       {/* ─── Breadcrumb ─── */}
@@ -507,7 +547,9 @@ export default function ItemsPage() {
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all border border-transparent hover:border-red-100 dark:hover:border-red-900/40">
+                        <button 
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all border border-transparent hover:border-red-100 dark:hover:border-red-900/40">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -627,225 +669,208 @@ export default function ItemsPage() {
                className="relative bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.4)] border border-slate-200 dark:border-slate-800 flex flex-col"
             >
                {/* Modal Header */}
-               <div className="px-10 py-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 relative z-10">
+               <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 relative z-10">
                   <div>
-                     <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">
                         {editingItemId ? "Edit Item" : "Add New Item"}
                      </h2>
-                     <p className="text-sm font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase tracking-widest">Workspace: {project?.name}</p>
+                     <p className="text-xs text-slate-500 mt-1">Update the item information.</p>
                   </div>
                   <button 
                      onClick={handleCloseModal}
-                     className="w-12 h-12 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                     className="w-8 h-8 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   >
-                     <X className="w-6 h-6" />
+                     <X className="w-4 h-4" />
                   </button>
                </div>
 
               {/* Modal Body (Scrollable) */}
-              <div className="flex-1 overflow-y-auto px-10 py-10 space-y-10 custom-scrollbar relative z-10">
-                <form id="item-form" onSubmit={handleSubmit} className="space-y-10">
-                  {/* Basic Info Group */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Item Code</label>
-                        <input 
-                           type="text"
-                           placeholder="e.g., S00995413"
-                           value={formData.item_code}
-                           onChange={e => setFormData({...formData, item_code: e.target.value})}
-                           className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 focus:outline-none transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-300"
-                        />
-                     </div>
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Department*</label>
-                        <div className="relative group">
-                           <select 
-                              required
-                              value={formData.department}
-                              onChange={e => setFormData({...formData, department: e.target.value})}
-                              className="w-full appearance-none px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 focus:outline-none transition-all font-bold text-slate-900 dark:text-white cursor-pointer"
-                           >
-                              <option value="">Select Department</option>
-                              {departments.map(d => <option key={d} value={d}>{d}</option>)}
-                           </select>
-                           <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none group-hover:text-blue-500" />
-                        </div>
-                     </div>
+              <div className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar relative z-10 w-full text-slate-700 dark:text-slate-300">
+                <form id="item-form" onSubmit={handleSubmit} className="space-y-4">
+                  {/* Item Code */}
+                  <div className="space-y-1.5 w-1/2">
+                    <label className="text-xs text-slate-600 dark:text-slate-400">Item Code</label>
+                    <input 
+                      type="text"
+                      value={formData.item_code}
+                      onChange={e => setFormData({...formData, item_code: e.target.value})}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none transition-all text-sm"
+                    />
                   </div>
 
-                  <div className="space-y-3">
-                     <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">Description*</label>
-                     <textarea 
+                  {/* Description */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-600 dark:text-slate-400">Item Description *</label>
+                    <textarea 
+                      required
+                      rows={3}
+                      value={formData.description}
+                      onChange={e => setFormData({...formData, description: e.target.value})}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none transition-all text-sm resize-y"
+                    />
+                  </div>
+
+                  {/* Short Description */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs text-slate-600 dark:text-slate-400">Short Description (for milestone heading)</label>
+                    <input 
+                      type="text"
+                      value={formData.short_description}
+                      onChange={e => setFormData({...formData, short_description: e.target.value})}
+                      className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none transition-all text-sm"
+                    />
+                    <p className="text-[10px] text-slate-400">Used as heading for milestones in measurement sheet</p>
+                  </div>
+
+                  {/* Unit and Department (Side by Side) */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-slate-600 dark:text-slate-400">Unit of Measurement *</label>
+                      <select 
                         required
-                        rows={4}
-                        placeholder="Detailed description of the work item..."
-                        value={formData.description}
-                        onChange={e => setFormData({...formData, description: e.target.value})}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-[1.5rem] focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 focus:outline-none transition-all font-bold text-slate-900 dark:text-white placeholder:text-slate-300 resize-none"
-                     />
+                        value={formData.unit}
+                        onChange={e => setFormData({...formData, unit: e.target.value})}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none transition-all text-sm appearance-none"
+                      >
+                        <option value="MT">MT</option>
+                        <option value="KG">KG</option>
+                        <option value="LS">LS</option>
+                        <option value="NOS">NOS</option>
+                        <option value="M">M</option>
+                        <option value="SQM">SQM</option>
+                        <option value="CUM">CUM</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-slate-600 dark:text-slate-400">Department *</label>
+                      <select 
+                        required
+                        value={formData.department}
+                        onChange={e => setFormData({...formData, department: e.target.value})}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none transition-all text-sm appearance-none"
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
                   </div>
 
-                  {/* Financials Group */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 p-8 bg-blue-50/30 dark:bg-blue-900/10 rounded-[2rem] border border-blue-100/50 dark:border-blue-900/30">
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">Unit*</label>
-                        <div className="relative group">
-                           <select 
-                              required
-                              value={formData.unit}
-                              onChange={e => setFormData({...formData, unit: e.target.value})}
-                              className="w-full appearance-none px-5 py-3.5 bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800 rounded-2xl focus:border-blue-500 focus:outline-none transition-all font-bold text-slate-900 dark:text-white cursor-pointer"
-                           >
-                              <option value="MT">MT</option>
-                              <option value="KG">KG</option>
-                              <option value="LS">LS</option>
-                              <option value="NOS">NOS</option>
-                              <option value="M">M</option>
-                              <option value="SQM">SQM</option>
-                              <option value="CUM">CUM</option>
-                           </select>
-                           <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400 pointer-events-none group-hover:text-blue-500" />
-                        </div>
-                     </div>
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">Total Quantity*</label>
-                        <input 
-                           required
-                           type="number"
-                           step="0.001"
-                           placeholder="0.000"
-                           value={formData.quantity}
-                           onChange={e => setFormData({...formData, quantity: e.target.value})}
-                           className="w-full px-5 py-3.5 bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800 rounded-2xl focus:border-blue-500 focus:outline-none transition-all font-bold text-slate-900 dark:text-white font-mono"
-                        />
-                     </div>
-                     <div className="space-y-3">
-                        <label className="text-[10px] font-bold text-blue-600 uppercase tracking-widest pl-1">Unit Rate (₹)*</label>
-                        <input 
-                           required
-                           type="number"
-                           step="0.01"
-                           placeholder="0.00"
-                           value={formData.rate}
-                           onChange={e => setFormData({...formData, rate: e.target.value})}
-                           className="w-full px-5 py-3.5 bg-white dark:bg-slate-900 border border-blue-100 dark:border-blue-800 rounded-2xl focus:border-blue-500 focus:outline-none transition-all font-bold text-slate-900 dark:text-white font-mono"
-                        />
-                     </div>
+                  {/* Quantity and Unit Rate (Side by Side) */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-slate-600 dark:text-slate-400">Quantity *</label>
+                      <input 
+                        required
+                        type="number"
+                        step="0.001"
+                        value={formData.quantity}
+                        onChange={e => setFormData({...formData, quantity: e.target.value})}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none transition-all text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-slate-600 dark:text-slate-400">Unit Rate (₹) *</label>
+                      <input 
+                        required
+                        type="number"
+                        step="0.01"
+                        value={formData.rate}
+                        onChange={e => setFormData({...formData, rate: e.target.value})}
+                        className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:border-blue-500 focus:outline-none transition-all text-sm"
+                      />
+                    </div>
                   </div>
 
                   {/* Billing Breakup Section */}
-                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between mb-8">
-                       <div>
-                        <label className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Billing Milestones</label>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sum must equal 100%</p>
-                       </div>
+                  <div className="pt-4 mt-2">
+                    <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
+                      <label className="text-xs font-medium text-slate-800 dark:text-slate-200">Billing Breakup *</label>
                       <button 
                         type="button"
                         onClick={handleAddMilestone}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800/90 dark:hover:bg-slate-100 rounded-xl text-xs font-bold transition-all shadow-lg active:scale-95"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 transition-colors"
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-3.5 h-3.5" />
                         Add Milestone
                       </button>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                       {milestones.map((ms, idx) => (
-                        <div key={idx} className="flex gap-4 items-center group bg-slate-50/50 dark:bg-slate-800/30 p-2 rounded-[1.5rem] border border-transparent hover:border-slate-200 transition-all">
-                          <div className="flex-1">
-                            <input 
-                              required
-                              type="text"
-                              placeholder="e.g., Fabrication Completion"
-                              value={ms.name}
-                              onChange={e => updateMilestone(idx, "name", e.target.value)}
-                              className="w-full px-5 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:border-blue-500 focus:outline-none transition-all shadow-sm"
-                            />
-                          </div>
-                          <div className="w-32 relative">
+                        <div key={idx} className="flex gap-3 items-center">
+                          <input 
+                            required
+                            type="text"
+                            value={ms.name}
+                            onChange={e => updateMilestone(idx, "name", e.target.value)}
+                            className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:border-blue-500 focus:outline-none transition-all"
+                          />
+                          <div className="w-20 relative">
                             <input 
                               required
                               type="number"
-                              placeholder="100"
                               value={ms.percentage}
                               onChange={e => updateMilestone(idx, "percentage", e.target.value)}
-                              className="w-full pl-5 pr-10 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-black text-right focus:border-blue-500 focus:outline-none transition-all shadow-sm"
+                              className="w-full px-3 py-2 pr-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:border-blue-500 focus:outline-none transition-all"
                             />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs">%</span>
                           </div>
-                          {milestones.length > 1 && (
+                          {milestones.length > 1 ? (
                             <button 
                               type="button"
                               onClick={() => handleRemoveMilestone(idx)}
-                              className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 transition-all ml-2"
+                              className="w-6 h-6 flex items-center justify-center text-red-400 hover:text-red-600 transition-all"
                             >
-                              <Trash2 className="w-5 h-5" />
+                              <X className="w-4 h-4" />
                             </button>
+                          ) : (
+                            <div className="w-6 h-6" /> // Placeholder so alignment stays consistent
                           )}
                         </div>
                       ))}
                     </div>
 
-                    <div className="mt-8 flex items-center justify-between px-4 py-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
-                       <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${totalPercentage === 100 ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-red-500 animate-pulse'}`} />
-                          <span className={`text-sm font-black tracking-tight ${totalPercentage === 100 ? 'text-slate-900 dark:text-white' : 'text-red-500'}`}>
-                            Total Allocation: {totalPercentage}%
-                          </span>
-                       </div>
-                       {totalPercentage !== 100 && (
-                         <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Adjustment Required</span>
-                       )}
+                    <div className="mt-3 text-xs text-slate-500">
+                      Total: {totalPercentage}% {totalPercentage !== 100 && <span className="text-red-500 font-medium">(must equal 100%)</span>}
                     </div>
+                  </div>
+                  
+                  {/* Total amount summary at bottom */}
+                  <div className="pt-2 text-sm font-semibold text-slate-900 dark:text-white">
+                      Total Amount: ₹{(Number(formData.quantity || 0) * Number(formData.rate || 0)).toLocaleString("en-IN", {maximumFractionDigits: 2})}
                   </div>
                 </form>
               </div>
 
               {/* Modal Footer */}
-              <div className="px-10 py-8 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-end gap-5 relative z-10">
+              <div className="px-8 py-5 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-end gap-3 relative z-10">
                 <button 
                   onClick={handleCloseModal}
                   disabled={isSubmitting}
-                  className="px-6 py-3 text-sm font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  Discard Changes
+                  Cancel
                 </button>
                 <button 
                   form="item-form"
                   type="submit"
                   disabled={isSubmitting || totalPercentage !== 100}
-                  className="flex items-center gap-3 px-10 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:grayscale text-white text-base font-black rounded-2xl transition-all shadow-xl shadow-blue-600/30 active:scale-95"
+                  className="flex items-center justify-center min-w-[120px] px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed rounded-lg transition-colors"
                 >
                   {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Updating...
+                    </>
                   ) : (
-                    <CheckCircle2 className="w-5 h-5" />
+                    <>{editingItemId ? "Update Item" : "Create Item"}</>
                   )}
-                  {isSubmitting ? "Saving..." : (editingItemId ? "Save Changes" : "Create New Item")}
                 </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 10px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #334155;
-        }
-      `}</style>
     </div>
   );
 }

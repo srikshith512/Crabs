@@ -111,4 +111,84 @@ router.post('/item/:itemId', authenticateUser, async (req: AuthenticatedRequest,
   }
 });
 
+// PUT to update a measurement
+router.put('/:measurementId', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { measurementId } = req.params;
+    const scopedClient = getSupabaseScopedClient(req.token!);
+
+    // Get the measurement to find its item_id for access check
+    const { data: existing, error: fetchErr } = await scopedClient
+      .from('measurements')
+      .select('id, item_id')
+      .eq('id', measurementId)
+      .maybeSingle();
+
+    if (fetchErr) return res.status(400).json({ error: fetchErr.message });
+    if (!existing) return res.status(404).json({ error: 'Measurement not found' });
+
+    const access = await ensureItemAccess(req.token!, existing.item_id);
+    if (!access.ok) return res.status(403).json({ error: access.error });
+
+    const {
+      location_description,
+      length,
+      breadth,
+      depth,
+      quantity,
+      custom_fields
+    } = req.body;
+
+    const { data: measurement, error } = await access.scopedClient
+      .from('measurements')
+      .update({
+        location_description: location_description || '',
+        length: length || null,
+        breadth: breadth || null,
+        depth: depth || null,
+        quantity: quantity,
+        custom_fields: custom_fields || {},
+      })
+      .eq('id', measurementId)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json({ measurement });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
+// DELETE a measurement
+router.delete('/:measurementId', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { measurementId } = req.params;
+    const scopedClient = getSupabaseScopedClient(req.token!);
+
+    // Get the measurement to find its item_id for access check
+    const { data: existing, error: fetchErr } = await scopedClient
+      .from('measurements')
+      .select('id, item_id')
+      .eq('id', measurementId)
+      .maybeSingle();
+
+    if (fetchErr) return res.status(400).json({ error: fetchErr.message });
+    if (!existing) return res.status(404).json({ error: 'Measurement not found' });
+
+    const access = await ensureItemAccess(req.token!, existing.item_id);
+    if (!access.ok) return res.status(403).json({ error: access.error });
+
+    const { error } = await access.scopedClient
+      .from('measurements')
+      .delete()
+      .eq('id', measurementId);
+
+    if (error) return res.status(400).json({ error: error.message });
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Internal server error', details: err.message });
+  }
+});
+
 export default router;
