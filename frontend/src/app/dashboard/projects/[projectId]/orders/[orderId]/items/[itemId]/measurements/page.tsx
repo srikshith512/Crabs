@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -28,6 +28,9 @@ import {
 } from "lucide-react";
 import { calculateStructureWeight } from "@/lib/calculations/structure";
 import { calculateOthersQuantity } from "@/lib/calculations/others";
+import PipingLHSMeasurementSheet from "./piping-lhs-sheet";
+import PipingSpoolStatusMeasurementSheet from "./piping-spool-status-sheet";
+import PipingInsulationMeasurementSheet from "./piping-insulation-sheet";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Item = {
@@ -237,9 +240,9 @@ export default function MeasurementSheetPage() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  NEW ROW: Autosave (create first, then update)
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   const performNewRowSaveRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
@@ -306,7 +309,7 @@ export default function MeasurementSheetPage() {
         // Update existing entry in measurements array
         setMeasurements(prev => prev.map(m => m.id === savedId ? measurement : m));
       } else {
-        // First save — add to array and store the ID
+        // First save â€” add to array and store the ID
         setMeasurements(prev => [...prev, measurement]);
         setNewRowSavedId(measurement.id);
       }
@@ -391,9 +394,9 @@ export default function MeasurementSheetPage() {
     else if (e.key === "Escape") { handleCancelNewRow(); }
   };
 
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  EDIT EXISTING ROW: Inline edit + autosave
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   const startEditing = (m: any) => {
     // Close new row if active
@@ -515,9 +518,9 @@ export default function MeasurementSheetPage() {
     else if (e.key === "Escape") { handleCancelEdit(); }
   };
 
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  DELETE
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   const deleteMeasurement = async (id: string) => {
     const token = getSessionToken();
@@ -548,9 +551,9 @@ export default function MeasurementSheetPage() {
     }
   };
 
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   //  COMPUTED VALUES
-  // ═══════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   const isStructure = item?.department === "Structure";
   const isOthers = item?.department === "Others";
@@ -590,7 +593,7 @@ export default function MeasurementSheetPage() {
   // Active autosave status (whichever row is active)
   const activeSaveStatus = editingRowId ? editSaveStatus : saveStatus;
 
-  // ─── Status Indicator ───
+  // â”€â”€â”€ Status Indicator â”€â”€â”€
   const SaveStatusIndicator = () => {
     const statusConfig = {
       idle: { icon: null, text: "", color: "" },
@@ -623,7 +626,7 @@ export default function MeasurementSheetPage() {
     );
   };
 
-  // ─── Shared inline input class ───
+  // â”€â”€â”€ Shared inline input class â”€â”€â”€
   const inputClass = "w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded text-sm font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20";
   const inputNumClass = "w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 rounded text-sm font-mono text-right focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20";
 
@@ -636,7 +639,7 @@ export default function MeasurementSheetPage() {
     }
   };
 
-  // ─── Render inline cells (shared between new & edit rows) ───
+  // â”€â”€â”€ Render inline cells (shared between new & edit rows) â”€â”€â”€
   const renderInlineCells = (
     row: MeasurementRow,
     updater: (updates: Partial<MeasurementRow>) => void,
@@ -764,9 +767,35 @@ export default function MeasurementSheetPage() {
     );
   }
 
+  if (item?.department === "Piping-LHS") {
+    return (
+      <PipingLHSMeasurementSheet projectId={projectId} orderId={orderId} itemId={itemId} />
+    );
+  }
+
+  if (item?.department === "Piping-Spool Status") {
+    return (
+      <PipingSpoolStatusMeasurementSheet
+        projectId={projectId}
+        orderId={orderId}
+        itemId={itemId}
+      />
+    );
+  }
+
+  if (item?.department === "Piping Insulation") {
+    return (
+      <PipingInsulationMeasurementSheet
+        projectId={projectId}
+        orderId={orderId}
+        itemId={itemId}
+      />
+    );
+  }
+
   return (
     <div className="max-w-full mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      {/* ─── Back Link ─── */}
+      {/* â”€â”€â”€ Back Link â”€â”€â”€ */}
       <div className="mb-5">
         <Link
           href={`/dashboard/projects/${projectId}/orders/${orderId}/items`}
@@ -779,7 +808,7 @@ export default function MeasurementSheetPage() {
         </Link>
       </div>
 
-      {/* ─── Title Bar ─── */}
+      {/* â”€â”€â”€ Title Bar â”€â”€â”€ */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
@@ -802,7 +831,7 @@ export default function MeasurementSheetPage() {
             <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Unit Rate</span>
-              <span className="text-sm font-extrabold text-slate-900 dark:text-white">₹{item?.rate?.toLocaleString("en-IN") || "0"}</span>
+              <span className="text-sm font-extrabold text-slate-900 dark:text-white">â‚¹{item?.rate?.toLocaleString("en-IN") || "0"}</span>
             </div>
             <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
             <div className="flex flex-col">
@@ -812,7 +841,7 @@ export default function MeasurementSheetPage() {
             <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Amount</span>
-              <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">₹{totalAmount.toLocaleString("en-IN")}</span>
+              <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">â‚¹{totalAmount.toLocaleString("en-IN")}</span>
             </div>
           </div>
         </div>
@@ -825,7 +854,7 @@ export default function MeasurementSheetPage() {
         </div>
       </div>
 
-      {/* ─── Work Entries Section ─── */}
+      {/* â”€â”€â”€ Work Entries Section â”€â”€â”€ */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm mb-6">
         {/* Section Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
@@ -836,7 +865,7 @@ export default function MeasurementSheetPage() {
                 <SaveStatusIndicator />
               </div>
               <p className="text-[11px] text-slate-400 font-bold mt-0.5">
-                Auto saves as you type • Press Enter to save instantly • Esc to close
+                Auto saves as you type â€¢ Press Enter to save instantly â€¢ Esc to close
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -1043,7 +1072,7 @@ export default function MeasurementSheetPage() {
                 );
               })}
 
-              {/* New Row (inline add with autosave — stays open after save) */}
+              {/* New Row (inline add with autosave â€” stays open after save) */}
               {newRowActive && (
                 <tr
                   ref={newRowContainerRef}
@@ -1065,7 +1094,7 @@ export default function MeasurementSheetPage() {
             <tfoot>
               <tr className="bg-slate-50 dark:bg-slate-800/30 border-t-2 border-slate-200 dark:border-slate-700 font-bold">
                 <td className="px-4 py-3"></td>
-                <td className="px-4 py-3 text-sm font-extrabold text-slate-900 dark:text-white">Subtotal · All Areas</td>
+                <td className="px-4 py-3 text-sm font-extrabold text-slate-900 dark:text-white">Subtotal Â· All Areas</td>
                 {isStructure && (<><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td></>)}
                 {isOthers && (<><td className="px-4 py-3"></td><td className="px-4 py-3"></td><td className="px-4 py-3"></td></>)}
                 <td className="px-4 py-3 text-sm font-extrabold text-right text-slate-900 dark:text-white font-mono">
@@ -1092,7 +1121,7 @@ export default function MeasurementSheetPage() {
         </div>
       </div>
 
-      {/* ─── Summary Cards ─── */}
+      {/* â”€â”€â”€ Summary Cards â”€â”€â”€ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex items-center gap-5">
           <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
@@ -1120,7 +1149,7 @@ export default function MeasurementSheetPage() {
         </div>
       </div>
 
-      {/* ─── Toast ─── */}
+      {/* â”€â”€â”€ Toast â”€â”€â”€ */}
       <AnimatePresence>
         {showToast && (
           <motion.div
@@ -1145,3 +1174,8 @@ export default function MeasurementSheetPage() {
     </div>
   );
 }
+
+
+
+
+
