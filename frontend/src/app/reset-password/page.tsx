@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Building2 } from "lucide-react";
+import { API_URL } from "@/lib/api-config";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 function ResetPasswordForm() {
@@ -35,7 +36,7 @@ function ResetPasswordForm() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/update-password`, {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",

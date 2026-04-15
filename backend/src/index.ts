@@ -19,8 +19,12 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 if (process.env.FRONTEND_URL) {
-  // Remove trailing slash if present to avoid CORS mismatch
-  const frontendUrl = process.env.FRONTEND_URL.replace(/\/$/, "");
+  // Add protocol if missing and remove trailing slash to avoid CORS mismatch
+  let frontendUrl = process.env.FRONTEND_URL;
+  if (!frontendUrl.startsWith('http')) {
+    frontendUrl = `https://${frontendUrl}`;
+  }
+  frontendUrl = frontendUrl.replace(/\/$/, "");
   allowedOrigins.push(frontendUrl);
 }
 

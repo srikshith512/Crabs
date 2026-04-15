@@ -15,7 +15,7 @@ services:
         fromService:
           name: crabs-frontend
           type: web
-          property: url
+          property: host
       - key: PORT
         value: 5000
 
@@ -31,7 +31,7 @@ services:
         fromService:
           name: crabs-backend
           type: web
-          property: url
+          property: host
       # If you need Supabase in the frontend as well:
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
