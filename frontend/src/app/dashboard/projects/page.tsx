@@ -29,7 +29,7 @@ export default function ProjectsPage() {
       const session = JSON.parse(sessionString);
       if (!session || !session.access_token) return router.push("/login");
 
-      const res = await fetch("http://localhost:5000/api/projects", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects`, {
         headers: {
           "Authorization": `Bearer ${session.access_token}`
         }
@@ -55,7 +55,7 @@ export default function ProjectsPage() {
       const session = JSON.parse(sessionString);
       if (!session || !session.access_token) return router.push("/login");
 
-      const res = await fetch("http://localhost:5000/api/projects", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

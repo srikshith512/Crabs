@@ -1,0 +1,39 @@
+services:
+  # Backend Service (Express API)
+  - type: web
+    name: crabs-backend
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: FRONTEND_URL
+        fromService:
+          name: crabs-frontend
+          type: web
+          property: host
+      - key: PORT
+        value: 5000
+
+  # Frontend Service (Next.js)
+  - type: web
+    name: crabs-frontend
+    runtime: node
+    plan: free
+    buildCommand: cd frontend && npm install && npm run build
+    startCommand: cd frontend && npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          name: crabs-backend
+          type: web
+          property: host
+      # If you need Supabase in the frontend as well:
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
