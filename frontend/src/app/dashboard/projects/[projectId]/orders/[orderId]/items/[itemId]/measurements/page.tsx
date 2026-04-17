@@ -31,6 +31,7 @@ import { calculateOthersQuantity } from "@/lib/calculations/others";
 import PipingLHSMeasurementSheet from "./piping-lhs-sheet";
 import PipingSpoolStatusMeasurementSheet from "./piping-spool-status-sheet";
 import PipingInsulationMeasurementSheet from "./piping-insulation-sheet";
+import EquipmentInsulationMeasurementSheet from "./equipment-insulation-sheet";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Item = {
@@ -786,6 +787,16 @@ export default function MeasurementSheetPage() {
   if (item?.department === "Piping Insulation") {
     return (
       <PipingInsulationMeasurementSheet
+        projectId={projectId}
+        orderId={orderId}
+        itemId={itemId}
+      />
+    );
+  }
+
+  if (item?.department === "Equipment Insulation") {
+    return (
+      <EquipmentInsulationMeasurementSheet
         projectId={projectId}
         orderId={orderId}
         itemId={itemId}
