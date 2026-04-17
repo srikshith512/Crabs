@@ -12,8 +12,32 @@ import measurementRoutes from './routes/measurements';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:8080',
+].filter(Boolean);
+
+if (process.env.FRONTEND_URL) {
+  // Add protocol if missing and remove trailing slash to avoid CORS mismatch
+  let frontendUrl = process.env.FRONTEND_URL;
+  if (!frontendUrl.startsWith('http')) {
+    frontendUrl = `https://${frontendUrl}`;
+  }
+  frontendUrl = frontendUrl.replace(/\/$/, "");
+  allowedOrigins.push(frontendUrl);
+}
+
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:8080'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());

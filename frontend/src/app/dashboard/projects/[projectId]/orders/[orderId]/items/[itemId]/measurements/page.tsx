@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -31,6 +31,7 @@ import { calculateOthersQuantity } from "@/lib/calculations/others";
 import PipingLHSMeasurementSheet from "./piping-lhs-sheet";
 import PipingSpoolStatusMeasurementSheet from "./piping-spool-status-sheet";
 import PipingInsulationMeasurementSheet from "./piping-insulation-sheet";
+import EquipmentInsulationMeasurementSheet from "./equipment-insulation-sheet";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Item = {
@@ -62,7 +63,7 @@ type MeasurementRow = {
 
 type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
 const AUTOSAVE_DELAY = 1500;
 
 export default function MeasurementSheetPage() {
@@ -786,6 +787,16 @@ export default function MeasurementSheetPage() {
   if (item?.department === "Piping Insulation") {
     return (
       <PipingInsulationMeasurementSheet
+        projectId={projectId}
+        orderId={orderId}
+        itemId={itemId}
+      />
+    );
+  }
+
+  if (item?.department === "Equipment Insulation") {
+    return (
+      <EquipmentInsulationMeasurementSheet
         projectId={projectId}
         orderId={orderId}
         itemId={itemId}

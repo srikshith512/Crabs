@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, Phone, FileText, CheckCircle2 } from "lucide-react";
+import { API_URL } from "@/lib/api-config";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function SignupPage() {
@@ -36,7 +37,7 @@ export default function SignupPage() {
     };
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/signup", {
+      const res = await fetch(`${API_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
