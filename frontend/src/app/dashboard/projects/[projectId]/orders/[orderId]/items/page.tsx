@@ -26,6 +26,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE } from "@/lib/api-config";
 
 type Project = {
   id: string;
@@ -62,7 +63,7 @@ type Item = {
   milestones?: Milestone[];
 };
 
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
+
 
 const memoryCache = {
   projects: {} as Record<string, Project>,

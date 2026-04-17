@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { calculatePipingInsulationValues } from "@/lib/calculations/piping-insulation";
+import { API_BASE } from "@/lib/api-config";
 
 type Item = {
   id: string;
@@ -83,7 +84,6 @@ type MeasurementRow = {
   milestoneValues: Record<string, number>;
 };
 
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
 const AUTOSAVE_DELAY = 1500;
 
 const FITTING_FIELDS: { key: FittingKey; label: string }[] = [

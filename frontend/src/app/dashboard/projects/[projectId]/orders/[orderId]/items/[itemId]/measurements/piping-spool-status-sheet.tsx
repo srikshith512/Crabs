@@ -25,6 +25,7 @@ import {
   calculateSpoolInchMeter,
   calculateSpoolStatusQuantity,
 } from "@/lib/calculations/piping-spool-status";
+import { API_BASE } from "@/lib/api-config";
 
 type Item = {
   id: string;
@@ -64,7 +65,6 @@ type Props = {
   itemId: string;
 };
 
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
 const AUTOSAVE_DELAY = 1500;
 
 const createEmptyRow = (): MeasurementRow => ({

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { calculateEquipmentInsulationValues } from "@/lib/calculations/equipment-insulation";
+import { API_BASE } from "@/lib/api-config";
 
 type Item = {
   id: string;
@@ -63,7 +64,6 @@ type MeasurementRow = {
   milestoneValues: Record<string, number>;
 };
 
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
 const AUTOSAVE_DELAY = 1500;
 
 const createEmptyRow = (): MeasurementRow => ({

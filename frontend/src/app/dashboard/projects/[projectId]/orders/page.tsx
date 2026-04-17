@@ -15,6 +15,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { API_BASE } from "@/lib/api-config";
 
 type Project = {
   id: string;
@@ -34,7 +35,7 @@ type Order = {
   total_amount?: number;
 };
 
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
+
 
 // In-memory cache for instant client-side navigations (bypasses hydration mismatch)
 const memoryCache = {

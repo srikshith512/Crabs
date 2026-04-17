@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Building2, Plus, X, Loader2 } from "lucide-react";
+import { API_BASE } from "@/lib/api-config";
 
 export default function ProjectsPage() {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
@@ -29,7 +30,7 @@ export default function ProjectsPage() {
       const session = JSON.parse(sessionString);
       if (!session || !session.access_token) return router.push("/login");
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects`, {
+      const res = await fetch(`${API_BASE}/projects`, {
         headers: {
           "Authorization": `Bearer ${session.access_token}`
         }
@@ -55,7 +56,7 @@ export default function ProjectsPage() {
       const session = JSON.parse(sessionString);
       if (!session || !session.access_token) return router.push("/login");
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects`, {
+      const res = await fetch(`${API_BASE}/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -33,6 +33,7 @@ import PipingSpoolStatusMeasurementSheet from "./piping-spool-status-sheet";
 import PipingInsulationMeasurementSheet from "./piping-insulation-sheet";
 import EquipmentInsulationMeasurementSheet from "./equipment-insulation-sheet";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE } from "@/lib/api-config";
 
 type Item = {
   id: string;
@@ -63,7 +64,6 @@ type MeasurementRow = {
 
 type SaveStatus = "idle" | "unsaved" | "saving" | "saved" | "error";
 
-const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
 const AUTOSAVE_DELAY = 1500;
 
 export default function MeasurementSheetPage() {
