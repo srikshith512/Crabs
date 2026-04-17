@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
@@ -21,7 +21,7 @@ const getFrontendUrl = (): string => {
   return url.replace(/\/+$/, '');
 };
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   
@@ -29,7 +29,7 @@ router.post('/login', async (req, res) => {
   return res.json({ session: data.session, user: data.user });
 });
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', async (req: Request, res: Response) => {
   const { email, password, fullName, companyName, mobileNumber, gstNumber } = req.body;
   
   const { data, error } = await supabase.auth.signUp({
@@ -49,7 +49,7 @@ router.post('/signup', async (req, res) => {
   return res.json({ session: data.session, user: data.user });
 });
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req: Request, res: Response) => {
   const { email } = req.body;
   let backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
   if (!backendUrl.startsWith('http')) {
@@ -65,7 +65,7 @@ router.post('/forgot-password', async (req, res) => {
   return res.json({ success: true });
 });
 
-router.get('/callback', async (req, res) => {
+router.get('/callback', async (req: Request, res: Response) => {
   const { code, next, token_hash, type } = req.query;
   const redirectPath = String(next || '/reset-password');
   const frontendUrl = getFrontendUrl();
@@ -93,10 +93,7 @@ router.get('/callback', async (req, res) => {
 });
 
 // Support both /update-password and /reset-password (frontend uses /reset-password)
-router.post('/update-password', handlePasswordUpdate);
-router.post('/reset-password', handlePasswordUpdate);
-
-async function handlePasswordUpdate(req: any, res: any) {
+async function handlePasswordUpdate(req: Request, res: Response) {
   const { password } = req.body;
   const authHeader = req.headers.authorization;
   
@@ -114,5 +111,8 @@ async function handlePasswordUpdate(req: any, res: any) {
   if (error) return res.status(400).json({ error: error.message });
   return res.json({ success: true });
 }
+
+router.post('/update-password', handlePasswordUpdate);
+router.post('/reset-password', handlePasswordUpdate);
 
 export default router;

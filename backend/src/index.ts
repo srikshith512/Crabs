@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import express from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -39,7 +39,7 @@ if (process.env.BACKEND_URL) {
 }
 
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // Allow requests with no origin (mobile apps, curl, server-side)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
@@ -64,7 +64,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api/measurements', measurementRoutes);
 
 // ── Health Check ─────────────────────────────────────────────────────
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok', version: '1.0.0', env: process.env.NODE_ENV || 'development' });
 });
 
