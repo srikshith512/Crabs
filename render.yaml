@@ -4,8 +4,9 @@ services:
     name: crabs-backend
     runtime: node
     plan: free
-    buildCommand: cd backend && npm install --include=dev && npm run build
-    startCommand: cd backend && npm start
+    rootDir: backend
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,33 +15,25 @@ services:
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: FRONTEND_URL
-        fromService:
-          name: crabs-frontend
-          type: web
-          property: host
+        value: https://crabs-frontend.onrender.com
       - key: BACKEND_URL
-        fromService:
-          name: crabs-backend
-          type: web
-          property: host
+        value: https://crabs-backend.onrender.com
       - key: PORT
         value: 5000
 
-  # ── Frontend Service (Next.js Standalone) ──────────────────────────
+  # ── Frontend Service (Next.js) ─────────────────────────────────────
   - type: web
     name: crabs-frontend
     runtime: node
     plan: free
-    buildCommand: cd frontend && npm install --include=dev && npm run build
-    startCommand: cd frontend && node .next/standalone/server.js
+    rootDir: frontend
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          name: crabs-backend
-          type: web
-          property: host
+        value: https://crabs-backend.onrender.com
       - key: NEXT_PUBLIC_SUPABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
