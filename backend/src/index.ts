@@ -8,6 +8,7 @@ import projectRoutes from './routes/projects';
 import orderRoutes from './routes/orders';
 import itemRoutes from './routes/items';
 import measurementRoutes from './routes/measurements';
+import billRoutes from './routes/bills';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -62,6 +63,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/measurements', measurementRoutes);
+app.use('/api/bills', billRoutes);
 
 // ── Health Check ─────────────────────────────────────────────────────
 app.get('/health', (_req: Request, res: Response) => {

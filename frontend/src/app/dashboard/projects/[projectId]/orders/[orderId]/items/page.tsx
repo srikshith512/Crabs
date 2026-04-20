@@ -18,7 +18,6 @@ import {
   Search,
   Settings,
   Edit2,
-  FileText,
   DollarSign,
   TrendingUp,
   Briefcase,
@@ -27,6 +26,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_BASE } from "@/lib/api-config";
+import { RABillDialog } from "./ra-bill-dialog";
 
 type Project = {
   id: string;
@@ -61,6 +61,16 @@ type Item = {
   rate: number;
   created_at: string;
   milestones?: Milestone[];
+  measurements?: Array<{
+    id: string;
+    item_id: string;
+    location_description?: string;
+    length?: number | null;
+    breadth?: number | null;
+    depth?: number | null;
+    quantity?: number | null;
+    custom_fields?: Record<string, any>;
+  }>;
 };
 
 
@@ -398,10 +408,7 @@ export default function ItemsPage() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 font-bold rounded-2xl transition-all border border-slate-200 dark:border-slate-800 shadow-sm active:scale-95">
-            <FileText className="w-5 h-5 text-blue-600" />
-            Generate RA Bill
-          </button>
+          <RABillDialog project={project} order={order} items={items} onGenerated={() => void loadData(true)} />
           <button 
             onClick={() => {
               setEditingItemId(null);
