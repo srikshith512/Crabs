@@ -1,0 +1,67 @@
+# Blueprint: https://render.com/docs/blueprint-spec
+# After first deploy, set SUPABASE_* and NEXT_PUBLIC_SUPABASE_* in the dashboard (sync: false).
+
+version: "1"
+
+services:
+  # ── Backend (Express API) ───────────────────────────────────────────
+  - type: web
+    name: crabs-backend
+    runtime: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - backend/**
+        - render.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Set in Dashboard → crabs-backend → Environment (secrets are not in git)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      # Bare hostname from the frontend service (CORS origin)
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: crabs-frontend
+          property: host
+      # Bare hostname of this API (Supabase redirect URLs, CORS)
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: crabs-backend
+          property: host
+
+  # ── Frontend (Next.js) ──────────────────────────────────────────────
+  - type: web
+    name: crabs-frontend
+    runtime: node
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - frontend/**
+        - render.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Bare hostname → frontend prepends https:// at build time (see src/lib/api-config.ts)
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: crabs-backend
+          property: host
+      # Same values as backend SUPABASE_* (needed if you add client-side Supabase later)
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
