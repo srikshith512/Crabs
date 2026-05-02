@@ -34,6 +34,9 @@ import PipingInsulationMeasurementSheet from "./piping-insulation-sheet";
 import EquipmentInsulationMeasurementSheet from "./equipment-insulation-sheet";
 import { motion, AnimatePresence } from "framer-motion";
 import { API_BASE } from "@/lib/api-config";
+import ItemGroupConfig from "@/components/item-group-config";
+import { useItemGroups } from "@/hooks/use-item-groups";
+import { getBlockedGroupReason, normalizeDepartment } from "@/lib/item-groups";
 
 type Item = {
   id: string;
@@ -78,7 +81,20 @@ export default function MeasurementSheetPage() {
   const [item, setItem] = useState<Item | null>(null);
   const [departmentItems, setDepartmentItems] = useState<Item[]>([]);
   const [measurements, setMeasurements] = useState<any[]>([]);
+  const [isGroupConfigOpen, setIsGroupConfigOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const currentDepartmentKey = normalizeDepartment(item?.department);
+  const usesGenericMeasurementSheet =
+    currentDepartmentKey === "structure" || currentDepartmentKey === "others";
+  const {
+    groups: itemGroups,
+    setGroups: setItemGroups,
+    loading: itemGroupsLoading,
+    error: itemGroupsError,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+  } = useItemGroups(orderId, usesGenericMeasurementSheet ? item?.department : undefined);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<"success" | "error">("success");
@@ -178,7 +194,8 @@ export default function MeasurementSheetPage() {
       if (currentItem) {
         setItem(currentItem);
         if (currentItem.department) {
-          setDepartmentItems(itemsList.filter((i: any) => i.department === currentItem.department));
+          const departmentKey = normalizeDepartment(currentItem.department);
+          setDepartmentItems(itemsList.filter((i: any) => normalizeDepartment(i.department) === departmentKey));
         }
       }
 
@@ -719,22 +736,32 @@ export default function MeasurementSheetPage() {
           {Number(row.total_weight || 0).toFixed(3)}
         </div>
       </td>
-      {departmentMilestones.map((ms, msIdx) => (
-        <td key={msIdx} className="px-4 py-2 text-center text-xs font-mono">
-          <input 
-            type="number" step="0.001" placeholder="qty"
-            value={row.milestone_values?.[ms.mapKey] ?? ""}
-            onChange={e => {
-              const val = e.target.value ? Number(e.target.value) : undefined;
-              const newVals = { ...(row.milestone_values || {}) };
-              if (val !== undefined) newVals[ms.mapKey] = val;
-              else delete newVals[ms.mapKey];
-              updater({ milestone_values: newVals });
-            }}
-            className={inputNumClass}
-          />
-        </td>
-      ))}
+      {departmentMilestones.map((ms, msIdx) => {
+        const blockedReason = getBlockedGroupReason(
+          ms,
+          row.milestone_values,
+          itemGroups,
+          row.custom_fields?.ra_locks || [],
+        );
+        return (
+          <td key={msIdx} className="px-4 py-2 text-center text-xs font-mono">
+            <input
+              type="number" step="0.001" placeholder="qty"
+              value={row.milestone_values?.[ms.mapKey] ?? ""}
+              disabled={!!blockedReason}
+              title={blockedReason || "Milestone quantity"}
+              onChange={e => {
+                const val = e.target.value ? Number(e.target.value) : undefined;
+                const newVals = { ...(row.milestone_values || {}) };
+                if (val !== undefined) newVals[ms.mapKey] = val;
+                else delete newVals[ms.mapKey];
+                updater({ milestone_values: newVals });
+              }}
+              className={`${inputNumClass} disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:border-slate-800 dark:disabled:bg-slate-900/60`}
+            />
+          </td>
+        );
+      })}
     </>
   );
 
@@ -892,7 +919,10 @@ export default function MeasurementSheetPage() {
               <button className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all">
                 <FileDown className="w-3.5 h-3.5" /> Export CSV
               </button>
-              <button className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all">
+              <button
+                onClick={() => setIsGroupConfigOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all"
+              >
                 <LayoutGrid className="w-3.5 h-3.5" /> Groups
               </button>
               <button className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all">
@@ -1167,6 +1197,20 @@ export default function MeasurementSheetPage() {
       </div>
 
       {/* â”€â”€â”€ Toast â”€â”€â”€ */}
+      <ItemGroupConfig
+        open={isGroupConfigOpen}
+        department={item?.department || ""}
+        items={departmentItems}
+        groups={itemGroups}
+        loading={itemGroupsLoading}
+        error={itemGroupsError}
+        onClose={() => setIsGroupConfigOpen(false)}
+        onCreateGroup={createGroup}
+        onUpdateGroup={updateGroup}
+        onDeleteGroup={deleteGroup}
+        onGroupsChange={setItemGroups}
+      />
+
       <AnimatePresence>
         {showToast && (
           <motion.div

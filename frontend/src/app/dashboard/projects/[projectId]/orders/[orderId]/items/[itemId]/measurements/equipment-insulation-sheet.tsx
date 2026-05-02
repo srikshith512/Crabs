@@ -22,6 +22,9 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { calculateEquipmentInsulationValues } from "@/lib/calculations/equipment-insulation";
 import { API_BASE } from "@/lib/api-config";
+import ItemGroupConfig from "@/components/item-group-config";
+import { useItemGroups } from "@/hooks/use-item-groups";
+import { getBlockedGroupReason, normalizeDepartment } from "@/lib/item-groups";
 
 type Item = {
   id: string;
@@ -166,7 +169,17 @@ export default function EquipmentInsulationMeasurementSheet({
   const [item, setItem] = useState<Item | null>(null);
   const [departmentItems, setDepartmentItems] = useState<Item[]>([]);
   const [measurements, setMeasurements] = useState<any[]>([]);
+  const [isGroupConfigOpen, setIsGroupConfigOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const {
+    groups: itemGroups,
+    setGroups: setItemGroups,
+    loading: itemGroupsLoading,
+    error: itemGroupsError,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+  } = useItemGroups(orderId, item?.department);
   const [searchQuery, setSearchQuery] = useState("");
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({
     equipmentNo: "",
@@ -275,7 +288,7 @@ export default function EquipmentInsulationMeasurementSheet({
       if (currentItem) {
         setItem(currentItem);
         setDepartmentItems(
-          items.filter((entry: any) => entry.department === currentItem.department),
+          items.filter((entry: any) => normalizeDepartment(entry.department) === normalizeDepartment(currentItem.department)),
         );
       }
 
@@ -600,28 +613,34 @@ export default function EquipmentInsulationMeasurementSheet({
     );
   };
 
-  const milestoneCells = (
-    row: MeasurementRow,
-    updater: (updates: Partial<MeasurementRow>) => void,
-  ) =>
-    departmentMilestones.map((milestone, index) => (
-      <td key={index} className="px-4 py-2 text-center text-xs font-mono">
-        <input
-          type="number"
-          step="0.001"
-          placeholder="qty"
-          value={row.milestoneValues[milestone.mapKey] ?? ""}
-          onChange={(e) => {
-            const next = { ...row.milestoneValues };
-            if (e.target.value) next[milestone.mapKey] = Number(e.target.value);
-            else delete next[milestone.mapKey];
-            updater({ milestoneValues: next });
-          }}
-          className={inputNumClass}
-        />
-      </td>
-    ));
-
+  const milestoneCells = (row: MeasurementRow, updater: (updates: Partial<MeasurementRow>) => void) =>
+    departmentMilestones.map((milestone, index) => {
+      const blockedReason = getBlockedGroupReason(
+        milestone,
+        row.milestoneValues,
+        itemGroups,
+        row.customFields?.ra_locks || [],
+      );
+      return (
+        <td key={index} className="px-4 py-2 text-center text-xs font-mono">
+          <input
+            type="number"
+            step="0.001"
+            placeholder="qty"
+            value={row.milestoneValues[milestone.mapKey] ?? ""}
+            disabled={!!blockedReason}
+            title={blockedReason || "Milestone quantity"}
+            onChange={(e) => {
+              const next = { ...row.milestoneValues };
+              if (e.target.value) next[milestone.mapKey] = Number(e.target.value);
+              else delete next[milestone.mapKey];
+              updater({ milestoneValues: next });
+            }}
+            className={`${inputNumClass} disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400 dark:disabled:border-slate-800 dark:disabled:bg-slate-900/60`}
+          />
+        </td>
+      );
+    });
   const renderEditableCells = (
     row: MeasurementRow,
     updater: (updates: Partial<MeasurementRow>) => void,
@@ -735,7 +754,7 @@ export default function EquipmentInsulationMeasurementSheet({
             <div className="flex items-center gap-2 flex-wrap">
               <button className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all"><Clipboard className="w-3.5 h-3.5" /> Paste Row</button>
               <button className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all"><FileDown className="w-3.5 h-3.5" /> Export CSV</button>
-              <button className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all"><LayoutGrid className="w-3.5 h-3.5" /> Groups</button>
+              <button onClick={() => setIsGroupConfigOpen(true)} className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all"><LayoutGrid className="w-3.5 h-3.5" /> Groups</button>
               <button className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-600 dark:text-slate-300 transition-all"><Columns className="w-3.5 h-3.5" /> Add Column</button>
               <button onClick={handleAddRow} className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[11px] font-bold transition-all shadow-lg shadow-blue-600/20"><Plus className="w-3.5 h-3.5" /> Add Row</button>
             </div>
@@ -841,6 +860,20 @@ export default function EquipmentInsulationMeasurementSheet({
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex items-center gap-5"><div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600"><Weight className="w-6 h-6" /></div><div><div className="flex items-baseline gap-1.5"><span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{item?.unit || "Unit"}</span></div><h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none mt-1">{totalMeasured.toFixed(3)}</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Measured Quantity</p></div></div>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm flex items-center gap-5"><div className="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600"><TrendingUp className="w-6 h-6" /></div><div><div className="flex items-baseline gap-1.5"><span className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">%</span></div><h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-none mt-1">{progressPercent.toFixed(0)}%</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Overall Milestone Progress</p></div></div>
       </div>
+
+      <ItemGroupConfig
+        open={isGroupConfigOpen}
+        department={item?.department || ""}
+        items={departmentItems}
+        groups={itemGroups}
+        loading={itemGroupsLoading}
+        error={itemGroupsError}
+        onClose={() => setIsGroupConfigOpen(false)}
+        onCreateGroup={createGroup}
+        onUpdateGroup={updateGroup}
+        onDeleteGroup={deleteGroup}
+        onGroupsChange={setItemGroups}
+      />
 
       <AnimatePresence>{showToast && (<motion.div initial={{ opacity: 0, y: 50, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.9 }} className="fixed bottom-8 right-8 z-[100] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl p-4 flex items-center gap-4 min-w-[300px] overflow-hidden"><div className={`absolute top-0 left-0 w-1 h-full ${toastType === "success" ? "bg-emerald-500" : "bg-red-500"}`} /><div className={`w-10 h-10 rounded-xl flex items-center justify-center ${toastType === "success" ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600" : "bg-red-50 dark:bg-red-900/20 text-red-600"}`}>{toastType === "success" ? <CheckCircle2 className="w-6 h-6" /> : <CloudOff className="w-6 h-6" />}</div><div><p className="font-extrabold text-slate-900 dark:text-white">{toastMessage}</p><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{toastType === "success" ? "Done" : "Please retry"}</p></div></motion.div>)}</AnimatePresence>
     </div>
